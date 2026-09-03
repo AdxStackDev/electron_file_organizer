@@ -1,0 +1,23 @@
+{
+  "name": "adx-file-organizer",
+  "version": "1.0.0",
+  "description": "A desktop application for organizing files by extension",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "file-organizer",
+    "desktop",
+    "automation"
+  ],
+  "author": "ADX",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^44.1.1"
+  }
+}
