@@ -2,7 +2,7 @@
   "name": "adx-file-organizer",
   "version": "1.0.0",
   "description": "A desktop application for organizing files by extension",
-  "main": "index.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
