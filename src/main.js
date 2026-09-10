@@ -14,26 +14,26 @@ let mainWindow;
 
 // Default extension rules
 const DEFAULT_RULES = {
-    ".jpg": "Images",
-    ".jpeg": "Images",
-    ".png": "Images",
-    ".webp": "Images",
+    ".jpg": path.join(os.homedir(), "Pictures"),
+    ".jpeg": path.join(os.homedir(), "Pictures"),
+    ".png": path.join(os.homedir(), "Pictures"),
+    ".webp": path.join(os.homedir(), "Pictures"),
 
-    ".pdf": "Documents",
-    ".doc": "Documents",
-    ".docx": "Documents",
-    ".txt": "Documents",
+    ".pdf": path.join(os.homedir(), "Documents"),
+    ".doc": path.join(os.homedir(), "Documents"),
+    ".docx": path.join(os.homedir(), "Documents"),
+    ".txt": path.join(os.homedir(), "Documents"),
 
-    ".mp4": "Videos",
-    ".mkv": "Videos",
-    ".avi": "Videos",
+    ".mp4": path.join(os.homedir(), "Videos"),
+    ".mkv": path.join(os.homedir(), "Videos"),
+    ".avi": path.join(os.homedir(), "Videos"),
 
-    ".mp3": "Music",
-    ".wav": "Music",
+    ".mp3": path.join(os.homedir(), "Music", "mp3"),
+    ".wav": path.join(os.homedir(), "Music"),
 
-    ".zip": "Documents",
-    ".rar": "Documents",
-    ".7z": "Documents"
+    ".zip": path.join(os.homedir(), "Downloads", "Compressed"),
+    ".rar": path.join(os.homedir(), "Downloads", "Compressed"),
+    ".7z": path.join(os.homedir(), "Downloads", "Compressed")
 };
 
 function createWindow() {
