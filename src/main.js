@@ -12,28 +12,109 @@ const os = require("os");
 
 let mainWindow;
 
-// Default extension rules
+/*
+|--------------------------------------------------------------------------
+| Categories — label + default destination path
+|--------------------------------------------------------------------------
+*/
+
+const CATEGORIES = {
+    Images:     { label: "Images",     path: path.join(os.homedir(), "Pictures") },
+    Videos:     { label: "Videos",     path: path.join(os.homedir(), "Videos") },
+    Music:      { label: "Music",      path: path.join(os.homedir(), "Music") },
+    Documents:  { label: "Documents",  path: path.join(os.homedir(), "Documents") },
+    Archives:   { label: "Archives",   path: path.join(os.homedir(), "Downloads", "Compressed") },
+    Code:       { label: "Code",       path: path.join(os.homedir(), "Documents", "Code") },
+    Fonts:      { label: "Fonts",      path: path.join(os.homedir(), "Documents", "Fonts") },
+    Unknown:    { label: "Unknown",    path: "" }
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| Default extension → category mapping
+|--------------------------------------------------------------------------
+*/
+
 const DEFAULT_RULES = {
-    ".jpg": path.join(os.homedir(), "Pictures"),
-    ".jpeg": path.join(os.homedir(), "Pictures"),
-    ".png": path.join(os.homedir(), "Pictures"),
-    ".webp": path.join(os.homedir(), "Pictures"),
+    // Images
+    ".jpg":  "Images",
+    ".jpeg": "Images",
+    ".png":  "Images",
+    ".gif":  "Images",
+    ".bmp":  "Images",
+    ".webp": "Images",
+    ".svg":  "Images",
+    ".ico":  "Images",
+    ".tiff": "Images",
+    ".heic": "Images",
 
-    ".pdf": path.join(os.homedir(), "Documents"),
-    ".doc": path.join(os.homedir(), "Documents"),
-    ".docx": path.join(os.homedir(), "Documents"),
-    ".txt": path.join(os.homedir(), "Documents"),
+    // Videos
+    ".mp4":  "Videos",
+    ".mkv":  "Videos",
+    ".avi":  "Videos",
+    ".mov":  "Videos",
+    ".wmv":  "Videos",
+    ".flv":  "Videos",
+    ".webm": "Videos",
+    ".m4v":  "Videos",
 
-    ".mp4": path.join(os.homedir(), "Videos"),
-    ".mkv": path.join(os.homedir(), "Videos"),
-    ".avi": path.join(os.homedir(), "Videos"),
+    // Music
+    ".mp3":  "Music",
+    ".wav":  "Music",
+    ".flac": "Music",
+    ".aac":  "Music",
+    ".ogg":  "Music",
+    ".wma":  "Music",
+    ".m4a":  "Music",
 
-    ".mp3": path.join(os.homedir(), "Music", "mp3"),
-    ".wav": path.join(os.homedir(), "Music"),
+    // Documents
+    ".pdf":  "Documents",
+    ".doc":  "Documents",
+    ".docx": "Documents",
+    ".xls":  "Documents",
+    ".xlsx": "Documents",
+    ".ppt":  "Documents",
+    ".pptx": "Documents",
+    ".txt":  "Documents",
+    ".csv":  "Documents",
+    ".rtf":  "Documents",
+    ".odt":  "Documents",
 
-    ".zip": path.join(os.homedir(), "Downloads", "Compressed"),
-    ".rar": path.join(os.homedir(), "Downloads", "Compressed"),
-    ".7z": path.join(os.homedir(), "Downloads", "Compressed")
+    // Archives
+    ".zip":  "Archives",
+    ".rar":  "Archives",
+    ".7z":   "Archives",
+    ".tar":  "Archives",
+    ".gz":   "Archives",
+    ".bz2":  "Archives",
+    ".xz":   "Archives",
+    ".iso":  "Archives",
+
+    // Code
+    ".js":   "Code",
+    ".ts":   "Code",
+    ".py":   "Code",
+    ".java": "Code",
+    ".cpp":  "Code",
+    ".c":    "Code",
+    ".cs":   "Code",
+    ".html": "Code",
+    ".css":  "Code",
+    ".json": "Code",
+    ".xml":  "Code",
+    ".php":  "Code",
+    ".rb":   "Code",
+    ".go":   "Code",
+    ".rs":   "Code",
+    ".sh":   "Code",
+    ".bat":  "Code",
+
+    // Fonts
+    ".ttf":  "Fonts",
+    ".otf":  "Fonts",
+    ".woff": "Fonts",
+    ".woff2":"Fonts"
 };
 
 function createWindow() {
@@ -104,12 +185,32 @@ ipcMain.handle("get-default-folder", () => {
 
 /*
 |--------------------------------------------------------------------------
+| Get categories
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle("get-categories", () => {
+    return CATEGORIES;
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | Get default rules
+| Returns { ".jpg": { category: "Images", path: "C:\Users\...\Pictures" }, ... }
 |--------------------------------------------------------------------------
 */
 
 ipcMain.handle("get-default-rules", () => {
-    return DEFAULT_RULES;
+    const resolved = {};
+    for (const [ext, categoryKey] of Object.entries(DEFAULT_RULES)) {
+        const cat = CATEGORIES[categoryKey];
+        resolved[ext] = {
+            category: categoryKey,
+            path: cat ? cat.path : ""
+        };
+    }
+    return resolved;
 });
 
 

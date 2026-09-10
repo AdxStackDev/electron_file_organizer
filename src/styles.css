@@ -435,6 +435,136 @@ button {
 .summary-card:nth-child(3) strong { color: #a7f3d0; }
 
 
+/* ── Category dropdown ── */
+
+.category-cell {
+    width: 160px;
+    position: relative;
+}
+
+/* Custom dropdown trigger button */
+.cat-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px 8px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.cat-trigger:focus,
+.cat-trigger.open {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.cat-trigger svg {
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.cat-trigger.open svg {
+    transform: rotate(180deg);
+}
+
+/* Dropdown panel */
+.cat-dropdown {
+    position: fixed;
+    z-index: 9999;
+    min-width: 160px;
+    background: #1a1a35;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 5px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cat-dropdown.open {
+    display: flex;
+}
+
+/* Each option */
+.cat-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 11px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+}
+
+.cat-option:hover {
+    background: rgba(255,255,255,0.07);
+}
+
+.cat-option.active {
+    background: rgba(139, 92, 246, 0.15);
+}
+
+/* Color dot */
+.cat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Colors per category — applied to trigger AND options */
+.cat-Images    { color: #f9a8d4; }
+.cat-Videos    { color: #c4b5fd; }
+.cat-Music     { color: #a5f3fc; }
+.cat-Documents { color: #93c5fd; }
+.cat-Archives  { color: #fcd34d; }
+.cat-Code      { color: #6ee7b7; }
+.cat-Fonts     { color: #fdba74; }
+.cat-Unknown   { color: #9ca3af; }
+
+/* Trigger border tint per category */
+.cat-trigger.cat-Images    { border-color: rgba(236, 72, 153, 0.45);  background: rgba(236, 72, 153, 0.07); }
+.cat-trigger.cat-Videos    { border-color: rgba(139, 92, 246, 0.45);  background: rgba(139, 92, 246, 0.07); }
+.cat-trigger.cat-Music     { border-color: rgba(6, 182, 212, 0.45);   background: rgba(6, 182, 212, 0.07); }
+.cat-trigger.cat-Documents { border-color: rgba(59, 130, 246, 0.45);  background: rgba(59, 130, 246, 0.07); }
+.cat-trigger.cat-Archives  { border-color: rgba(245, 158, 11, 0.45);  background: rgba(245, 158, 11, 0.07); }
+.cat-trigger.cat-Code      { border-color: rgba(16, 185, 129, 0.45);  background: rgba(16, 185, 129, 0.07); }
+.cat-trigger.cat-Fonts     { border-color: rgba(251, 146, 60, 0.45);  background: rgba(251, 146, 60, 0.07); }
+.cat-trigger.cat-Unknown   { border-color: rgba(107, 114, 128, 0.45); background: rgba(107, 114, 128, 0.07); }
+
+/* Dot colors */
+.dot-Images    { background: #f9a8d4; }
+.dot-Videos    { background: #c4b5fd; }
+.dot-Music     { background: #a5f3fc; }
+.dot-Documents { background: #93c5fd; }
+.dot-Archives  { background: #fcd34d; }
+.dot-Code      { background: #6ee7b7; }
+.dot-Fonts     { background: #fdba74; }
+.dot-Unknown   { background: #9ca3af; }
+
+/* count column */
+.count-cell {
+    width: 90px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+
 /* ── Table ── */
 
 .table-wrapper {

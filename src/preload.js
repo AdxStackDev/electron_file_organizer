@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     getDefaultRules: () =>
         ipcRenderer.invoke("get-default-rules"),
 
+    getCategories: () =>
+        ipcRenderer.invoke("get-categories"),
+
     scanFolder: (folderPath) =>
         ipcRenderer.invoke("scan-folder", folderPath),
 
