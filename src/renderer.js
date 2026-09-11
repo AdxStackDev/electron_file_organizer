@@ -724,7 +724,8 @@ function clearScanResults() {
 
 /*
 |--------------------------------------------------------------------------
-| Activity log
+| Activity log (Shared)
+| Used by both organizer (renderer.js) and duplicates (duplicates.js)
 |--------------------------------------------------------------------------
 */
 
@@ -749,6 +750,11 @@ function addLog(message, type = "info") {
 
     activityLog.prepend(entry);
 }
+
+/**
+ * Expose addLog globally so duplicates.js can call it
+ */
+window.addLog = addLog;
 
 
 /*

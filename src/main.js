@@ -12,6 +12,9 @@ const os   = require("os");
 // All category + extension data lives in src/data — no hardcoded rules here
 const { CATEGORIES, DEFAULT_RULES } = require("./data/categories");
 
+// Duplicate finder module
+const duplicateFinder = require("./duplicateFinder");
+
 let mainWindow;
 
 
@@ -332,6 +335,208 @@ ipcMain.handle("organize-files", async (event, payload) => {
 
         return { success: true, results };
 
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Duplicate Finder IPC Handlers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Find duplicates by size (fast method)
+ */
+ipcMain.handle("find-duplicates-by-size", async (event, folderPath) => {
+    try {
+        duplicateFinder.reset();
+
+        const result = await duplicateFinder.findDuplicatesBySize(
+            folderPath,
+            (progress) => {
+                event.sender.send("duplicate-scan-progress", progress);
+            }
+        );
+
+        if (result.cancelled) {
+            return { success: false, error: "Scan was cancelled.", cancelled: true };
+        }
+
+        // Enrich duplicates with file metadata
+        const enrichedDuplicates = await Promise.all(
+            result.duplicates.map(async (group) => ({
+                ...group,
+                files: await Promise.all(
+                    group.files.map(filePath => duplicateFinder.getFileMetadata(filePath))
+                )
+            }))
+        );
+
+        duplicateFinder.setCachedResults(folderPath, enrichedDuplicates);
+
+        return {
+            success: true,
+            method: "size",
+            folderPath,
+            duplicates: enrichedDuplicates,
+            totalGroups: enrichedDuplicates.length,
+            totalDuplicateFiles: enrichedDuplicates.reduce((sum, g) => sum + g.files.length, 0)
+        };
+    } catch (error) {
+        return { success: false, error: error.message, method: "size" };
+    }
+});
+
+/**
+ * Find duplicates by hash (accurate method)
+ */
+ipcMain.handle("find-duplicates-by-hash", async (event, folderPath) => {
+    try {
+        duplicateFinder.reset();
+
+        const result = await duplicateFinder.findDuplicatesByHash(
+            folderPath,
+            (progress) => {
+                event.sender.send("duplicate-scan-progress", progress);
+            }
+        );
+
+        if (result.cancelled) {
+            return { success: false, error: "Scan was cancelled.", cancelled: true };
+        }
+
+        // Enrich duplicates with file metadata
+        const enrichedDuplicates = await Promise.all(
+            result.duplicates.map(async (group) => ({
+                ...group,
+                files: await Promise.all(
+                    group.files.map(filePath => duplicateFinder.getFileMetadata(filePath))
+                )
+            }))
+        );
+
+        duplicateFinder.setCachedResults(folderPath, enrichedDuplicates);
+
+        return {
+            success: true,
+            method: "hash",
+            folderPath,
+            duplicates: enrichedDuplicates,
+            totalGroups: enrichedDuplicates.length,
+            totalDuplicateFiles: enrichedDuplicates.reduce((sum, g) => sum + g.files.length, 0)
+        };
+    } catch (error) {
+        return { success: false, error: error.message, method: "hash" };
+    }
+});
+
+/**
+ * Cancel ongoing duplicate scan
+ */
+ipcMain.handle("cancel-duplicate-scan", async (event) => {
+    duplicateFinder.cancel();
+    return { success: true, message: "Scan cancelled." };
+});
+
+/**
+ * Get cached duplicate results for a folder
+ */
+ipcMain.handle("get-cached-duplicates", async (event, folderPath) => {
+    const cached = duplicateFinder.getCachedResults(folderPath);
+    if (!cached) {
+        return { success: false, error: "No cached results." };
+    }
+    return { success: true, ...cached };
+});
+
+/**
+ * Clear duplicate cache
+ */
+ipcMain.handle("clear-duplicate-cache", async (event, folderPath = null) => {
+    duplicateFinder.clearCache(folderPath);
+    return { success: true, message: "Cache cleared." };
+});
+
+/**
+ * Delete selected files
+ */
+ipcMain.handle("delete-files", async (event, filePaths) => {
+    try {
+        if (!Array.isArray(filePaths) || filePaths.length === 0) {
+            throw new Error("No files specified for deletion.");
+        }
+
+        const results = await duplicateFinder.deleteFiles(filePaths);
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+
+        return {
+            success: true,
+            results,
+            successCount,
+            failCount
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * Move files to a duplicates folder
+ */
+ipcMain.handle("move-files-to-duplicates-folder", async (event, payload) => {
+    try {
+        const { filePaths, folderPath } = payload;
+
+        if (!Array.isArray(filePaths) || filePaths.length === 0) {
+            throw new Error("No files specified for move.");
+        }
+
+        if (!folderPath) {
+            throw new Error("Folder path is required.");
+        }
+
+        // Create "Duplicates" folder in the current path
+        const duplicatesFolder = path.join(folderPath, "Duplicates");
+
+        const results = await duplicateFinder.moveFiles(filePaths, duplicatesFolder);
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+
+        return {
+            success: true,
+            duplicatesFolder,
+            results,
+            successCount,
+            failCount
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+/**
+ * Keep only the newest/largest file in a duplicate set, delete the rest
+ */
+ipcMain.handle("keep-only-best", async (event, payload) => {
+    try {
+        const { filePaths, keepBy } = payload;
+
+        if (!Array.isArray(filePaths) || filePaths.length < 2) {
+            throw new Error("At least 2 files are required.");
+        }
+
+        const result = await duplicateFinder.keepOnlyBest(filePaths, keepBy);
+
+        return {
+            success: true,
+            kept: result.kept,
+            deletedCount: result.deleted.length,
+            deletionResults: result.deleted
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }

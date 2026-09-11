@@ -551,6 +551,243 @@ button {
 }
 
 
+/* ── Detection Method Toggle ── */
+
+.detection-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-option:hover {
+    border-color: var(--purple);
+    background: rgba(139,92,246,0.05);
+}
+
+.toggle-option input[type="radio"] {
+    margin-top: 3px;
+    cursor: pointer;
+    accent-color: var(--purple);
+    width: 18px;
+    height: 18px;
+}
+
+.toggle-option input[type="radio"]:checked ~ .toggle-label {
+    opacity: 1;
+}
+
+.toggle-label {
+    flex: 1;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.toggle-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.toggle-title strong {
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.speed-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.speed-badge.fast {
+    background: rgba(16,185,129,0.15);
+    color: #a7f3d0;
+    border: 1px solid rgba(16,185,129,0.25);
+}
+
+.speed-badge.slow {
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59,130,246,0.25);
+}
+
+.toggle-label p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+
+/* ── Progress Bar ── */
+
+.progress-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+
+/* ── Duplicate Sets List ── */
+
+.duplicates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.duplicate-group {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.duplicate-group-header {
+    padding: 14px 16px;
+    background: rgba(139,92,246,0.05);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.duplicate-group-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.duplicate-group-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.stat-item {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-item strong {
+    color: #cbd5e1;
+    font-weight: 700;
+}
+
+.duplicate-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 1px;
+    background: var(--border);
+}
+
+.duplicate-file-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    transition: background 0.2s;
+}
+
+.duplicate-file-item:hover {
+    background: rgba(139,92,246,0.08);
+}
+
+.duplicate-file-item input[type="checkbox"] {
+    margin-top: 3px;
+    cursor: pointer;
+    accent-color: var(--purple);
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-weight: 700;
+    color: #f8fafc;
+    font-size: 13px;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.file-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.detail-item {
+    color: var(--muted);
+}
+
+.detail-item strong {
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.file-path {
+    display: none;
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-all;
+    padding: 4px 0;
+}
+
+
 /* ── Summary grid ── */
 
 .summary-grid {
