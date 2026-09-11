@@ -1,3 +1,60 @@
+/*
+|--------------------------------------------------------------------------
+| Sidebar & Navigation
+|--------------------------------------------------------------------------
+*/
+
+const appEl         = document.querySelector(".app");
+const sidebarToggle = document.getElementById("sidebarToggle");
+const navItems      = document.querySelectorAll(".nav-item[data-view]");
+const views         = document.querySelectorAll(".view");
+
+// Add tooltip text from nav-label for collapsed hover tooltips
+navItems.forEach(item => {
+    const label = item.querySelector(".nav-label");
+    if (label) item.dataset.tooltip = label.textContent.trim();
+});
+
+// Toggle collapse
+sidebarToggle.addEventListener("click", () => {
+    appEl.classList.toggle("sidebar-collapsed");
+});
+
+// View switching
+function switchView(viewId) {
+    // Deactivate all views
+    views.forEach(v => v.classList.remove("active"));
+
+    // Deactivate all nav items
+    navItems.forEach(n => n.classList.remove("active"));
+
+    // Activate target view
+    const targetView = document.getElementById("view-" + viewId);
+    if (targetView) targetView.classList.add("active");
+
+    // Activate matching nav item
+    const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+    if (targetNav) targetNav.classList.add("active");
+}
+
+navItems.forEach(item => {
+    item.addEventListener("click", () => {
+        switchView(item.dataset.view);
+    });
+});
+
+// Auto-switch to Activity view after organize completes
+function switchToActivity() {
+    switchView("activity");
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DOM references
+|--------------------------------------------------------------------------
+*/
+
 const folderPathInput =
     document.getElementById("folderPath");
 
@@ -96,8 +153,14 @@ scanButton.addEventListener("click", async () => {
         return;
     }
 
-    scanButton.disabled    = true;
-    scanButton.textContent = "Scanning...";
+    scanButton.disabled = true;
+    scanButton.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Scanning...
+    `;
 
     try {
 
@@ -123,7 +186,13 @@ scanButton.addEventListener("click", async () => {
     } finally {
 
         scanButton.disabled    = false;
-        scanButton.textContent = "Scan Folder";
+        scanButton.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Scan Folder
+        `;
     }
 });
 
@@ -451,8 +520,13 @@ organizeButton.addEventListener("click", async () => {
     const confirmed = confirm("Are you sure you want to organize these files?");
     if (!confirmed) return;
 
-    organizeButton.disabled    = true;
-    organizeButton.textContent = "Organizing...";
+    organizeButton.disabled  = true;
+    organizeButton.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Organizing...
+    `;
 
     try {
 
@@ -489,6 +563,9 @@ organizeButton.addEventListener("click", async () => {
             `Organization completed.\n\nMoved: ${movedCount}\nFailed: ${failedCount}`
         );
 
+        // Switch to Activity view so user sees results
+        switchToActivity();
+
         // Re-scan
         const scanResponse =
             await window.electronAPI.scanFolder(folderPath);
@@ -505,8 +582,13 @@ organizeButton.addEventListener("click", async () => {
 
     } finally {
 
-        organizeButton.disabled    = false;
-        organizeButton.textContent = "Organize Files";
+        organizeButton.disabled  = false;
+        organizeButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Organize Files
+        `;
     }
 });
 
