@@ -367,8 +367,8 @@ function selectCategory(wrapper, trigger, panel, key, extension) {
             input.value       = cat?.path ?? "";
             input.placeholder = "Destination path";
         }
-        // Trigger change event to save the rule
-        input.dispatchEvent(new Event("change"));
+        // Save the rule immediately (don't wait for change event)
+        saveUserRule(input.dataset.extension, input.value.trim());
     }
 
     updateSummary();
