@@ -6,116 +6,20 @@ const {
 } = require("electron");
 
 const path = require("path");
-const fs = require("fs/promises");
-const fsSync = require("fs");
-const os = require("os");
+const fs   = require("fs/promises");
+const os   = require("os");
+
+// All category + extension data lives in src/data — no hardcoded rules here
+const { CATEGORIES, DEFAULT_RULES } = require("./data/categories");
 
 let mainWindow;
 
-/*
-|--------------------------------------------------------------------------
-| Categories — label + default destination path
-|--------------------------------------------------------------------------
-*/
-
-const CATEGORIES = {
-    Images:     { label: "Images",     path: path.join(os.homedir(), "Pictures") },
-    Videos:     { label: "Videos",     path: path.join(os.homedir(), "Videos") },
-    Music:      { label: "Music",      path: path.join(os.homedir(), "Music") },
-    Documents:  { label: "Documents",  path: path.join(os.homedir(), "Documents") },
-    Archives:   { label: "Archives",   path: path.join(os.homedir(), "Downloads", "Compressed") },
-    Code:       { label: "Code",       path: path.join(os.homedir(), "Documents", "Code") },
-    Fonts:      { label: "Fonts",      path: path.join(os.homedir(), "Documents", "Fonts") },
-    Unknown:    { label: "Unknown",    path: "" }
-};
-
 
 /*
 |--------------------------------------------------------------------------
-| Default extension → category mapping
+| Window
 |--------------------------------------------------------------------------
 */
-
-const DEFAULT_RULES = {
-    // Images
-    ".jpg":  "Images",
-    ".jpeg": "Images",
-    ".png":  "Images",
-    ".gif":  "Images",
-    ".bmp":  "Images",
-    ".webp": "Images",
-    ".svg":  "Images",
-    ".ico":  "Images",
-    ".tiff": "Images",
-    ".heic": "Images",
-
-    // Videos
-    ".mp4":  "Videos",
-    ".mkv":  "Videos",
-    ".avi":  "Videos",
-    ".mov":  "Videos",
-    ".wmv":  "Videos",
-    ".flv":  "Videos",
-    ".webm": "Videos",
-    ".m4v":  "Videos",
-
-    // Music
-    ".mp3":  "Music",
-    ".wav":  "Music",
-    ".flac": "Music",
-    ".aac":  "Music",
-    ".ogg":  "Music",
-    ".wma":  "Music",
-    ".m4a":  "Music",
-
-    // Documents
-    ".pdf":  "Documents",
-    ".doc":  "Documents",
-    ".docx": "Documents",
-    ".xls":  "Documents",
-    ".xlsx": "Documents",
-    ".ppt":  "Documents",
-    ".pptx": "Documents",
-    ".txt":  "Documents",
-    ".csv":  "Documents",
-    ".rtf":  "Documents",
-    ".odt":  "Documents",
-
-    // Archives
-    ".zip":  "Archives",
-    ".rar":  "Archives",
-    ".7z":   "Archives",
-    ".tar":  "Archives",
-    ".gz":   "Archives",
-    ".bz2":  "Archives",
-    ".xz":   "Archives",
-    ".iso":  "Archives",
-
-    // Code
-    ".js":   "Code",
-    ".ts":   "Code",
-    ".py":   "Code",
-    ".java": "Code",
-    ".cpp":  "Code",
-    ".c":    "Code",
-    ".cs":   "Code",
-    ".html": "Code",
-    ".css":  "Code",
-    ".json": "Code",
-    ".xml":  "Code",
-    ".php":  "Code",
-    ".rb":   "Code",
-    ".go":   "Code",
-    ".rs":   "Code",
-    ".sh":   "Code",
-    ".bat":  "Code",
-
-    // Fonts
-    ".ttf":  "Fonts",
-    ".otf":  "Fonts",
-    ".woff": "Fonts",
-    ".woff2":"Fonts"
-};
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -123,9 +27,7 @@ function createWindow() {
         height: 800,
         minWidth: 900,
         minHeight: 650,
-
         backgroundColor: "#0f172a",
-
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
@@ -153,12 +55,13 @@ app.on("window-all-closed", () => {
     }
 });
 
-// default folder
-function getDownloadsFolder() {
-    return path.join(os.homedir(), "Downloads");
-}
 
-// Select folder
+/*
+|--------------------------------------------------------------------------
+| Select folder dialog
+|--------------------------------------------------------------------------
+*/
+
 ipcMain.handle("select-folder", async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openDirectory"]
@@ -179,13 +82,14 @@ ipcMain.handle("select-folder", async () => {
 */
 
 ipcMain.handle("get-default-folder", () => {
-    return getDownloadsFolder();
+    return path.join(os.homedir(), "Downloads");
 });
 
 
 /*
 |--------------------------------------------------------------------------
 | Get categories
+| Returns { Images: { label, path }, Videos: { ... }, ... }
 |--------------------------------------------------------------------------
 */
 
@@ -197,20 +101,13 @@ ipcMain.handle("get-categories", () => {
 /*
 |--------------------------------------------------------------------------
 | Get default rules
-| Returns { ".jpg": { category: "Images", path: "C:\Users\...\Pictures" }, ... }
+| Returns { ".jpg": { category: "Images", path: "..." }, ... }
+| DEFAULT_RULES from categories.js already has this exact shape.
 |--------------------------------------------------------------------------
 */
 
 ipcMain.handle("get-default-rules", () => {
-    const resolved = {};
-    for (const [ext, categoryKey] of Object.entries(DEFAULT_RULES)) {
-        const cat = CATEGORIES[categoryKey];
-        resolved[ext] = {
-            category: categoryKey,
-            path: cat ? cat.path : ""
-        };
-    }
-    return resolved;
+    return DEFAULT_RULES;
 });
 
 
@@ -239,25 +136,18 @@ ipcMain.handle("scan-folder", async (event, folderPath) => {
         const files = [];
 
         for (const entry of entries) {
-            if (!entry.isFile()) {
-                continue;
-            }
+            if (!entry.isFile()) continue;
 
-            const fileName = entry.name;
-
-            const extension = path.extname(fileName).toLowerCase();
-
-            // Files without extension
-            const normalizedExtension = extension || "[no extension]";
+            const ext = path.extname(entry.name).toLowerCase();
 
             files.push({
-                name: fileName,
-                path: path.join(folderPath, fileName),
-                extension: normalizedExtension
+                name:      entry.name,
+                path:      path.join(folderPath, entry.name),
+                extension: ext || "[no extension]"
             });
         }
 
-        // Count extensions
+        // Count per extension
         const extensionMap = {};
 
         for (const file of files) {
@@ -267,67 +157,54 @@ ipcMain.handle("scan-folder", async (event, folderPath) => {
                     count: 0
                 };
             }
-
             extensionMap[file.extension].count++;
         }
 
-        const results = Object.values(extensionMap).sort((a, b) => {
-            return a.extension.localeCompare(b.extension);
-        });
+        const extensions = Object.values(extensionMap).sort((a, b) =>
+            a.extension.localeCompare(b.extension)
+        );
 
         return {
             success: true,
             folder: folderPath,
             totalFiles: files.length,
-            extensions: results,
+            extensions,
             files
         };
 
     } catch (error) {
-        return {
-            success: false,
-            error: error.message
-        };
+        return { success: false, error: error.message };
     }
 });
 
 
 /*
 |--------------------------------------------------------------------------
-| Generate unique destination filename
+| Generate unique destination file path (avoid overwriting)
 |--------------------------------------------------------------------------
 */
 
-async function getUniqueFilePath(destinationPath) {
+async function getUniqueFilePath(destPath) {
     try {
-        await fs.access(destinationPath);
+        await fs.access(destPath);
 
-        const directory = path.dirname(destinationPath);
-        const extension = path.extname(destinationPath);
-        const baseName = path.basename(destinationPath, extension);
-
+        const dir  = path.dirname(destPath);
+        const ext  = path.extname(destPath);
+        const base = path.basename(destPath, ext);
         let counter = 1;
-        let newPath;
 
-        do {
-            newPath = path.join(
-                directory,
-                `${baseName} (${counter})${extension}`
-            );
-
+        while (true) {
+            const candidate = path.join(dir, `${base} (${counter})${ext}`);
             counter++;
-
             try {
-                await fs.access(newPath);
+                await fs.access(candidate);
             } catch {
-                return newPath;
+                return candidate;
             }
-
-        } while (true);
+        }
 
     } catch {
-        // File doesn't exist
-        return destinationPath;
+        return destPath;
     }
 }
 
@@ -340,10 +217,7 @@ async function getUniqueFilePath(destinationPath) {
 
 ipcMain.handle("organize-files", async (event, payload) => {
     try {
-        const {
-            folderPath,
-            extensions
-        } = payload;
+        const { folderPath, extensions } = payload;
 
         if (!folderPath) {
             throw new Error("Folder path is required.");
@@ -356,104 +230,52 @@ ipcMain.handle("organize-files", async (event, payload) => {
         const results = [];
 
         for (const item of extensions) {
-            const extension = item.extension;
-            const destinationFolder = item.destination;
+            const { extension, destination: destinationFolder } = item;
 
             if (!destinationFolder || destinationFolder.trim() === "") {
-                results.push({
-                    extension,
-                    success: false,
-                    message: "No destination configured."
-                });
-
+                results.push({ extension, success: false, message: "No destination configured." });
                 continue;
             }
 
-            // Ignore files without extension for now
             if (extension === "[no extension]") {
-                results.push({
-                    extension,
-                    success: false,
-                    message: "Files without extensions were skipped."
-                });
-
+                results.push({ extension, success: false, message: "Files without extensions were skipped." });
                 continue;
             }
 
-            const sourceDirectory = folderPath;
-
-            // If the destination is an absolute path, use it directly.
-            // If it's a relative path (e.g. "Images"), resolve it inside the source folder.
+            // Absolute path → use directly. Relative → resolve inside source folder.
             const destinationPath = path.isAbsolute(destinationFolder)
                 ? path.normalize(destinationFolder)
-                : path.resolve(sourceDirectory, destinationFolder);
+                : path.resolve(folderPath, destinationFolder);
 
-            // Prevent destination from being the source directory itself
-            if (destinationPath === path.resolve(sourceDirectory)) {
-                results.push({
-                    extension,
-                    success: false,
-                    message: "Destination cannot be the source folder."
-                });
-
+            if (destinationPath === path.resolve(folderPath)) {
+                results.push({ extension, success: false, message: "Destination cannot be the source folder." });
                 continue;
             }
 
-            await fs.mkdir(destinationPath, {
-                recursive: true
-            });
+            await fs.mkdir(destinationPath, { recursive: true });
 
-            const entries = await fs.readdir(sourceDirectory, {
-                withFileTypes: true
-            });
+            const entries = await fs.readdir(folderPath, { withFileTypes: true });
 
-            const matchingFiles = entries.filter(entry => {
-                if (!entry.isFile()) {
-                    return false;
-                }
-
-                const fileExtension =
-                    path.extname(entry.name).toLowerCase();
-
-                return fileExtension === extension;
-            });
-
-            let moved = 0;
-            let failed = 0;
+            const matchingFiles = entries.filter(entry =>
+                entry.isFile() &&
+                path.extname(entry.name).toLowerCase() === extension
+            );
 
             for (const file of matchingFiles) {
-                const sourcePath = path.join(
-                    sourceDirectory,
-                    file.name
-                );
-
-                let destinationFilePath = path.join(
-                    destinationPath,
-                    file.name
-                );
-
-                destinationFilePath =
-                    await getUniqueFilePath(destinationFilePath);
+                const sourcePath = path.join(folderPath, file.name);
+                let destFilePath = path.join(destinationPath, file.name);
+                destFilePath     = await getUniqueFilePath(destFilePath);
 
                 try {
-                    await fs.rename(
-                        sourcePath,
-                        destinationFilePath
-                    );
-
-                    moved++;
-
+                    await fs.rename(sourcePath, destFilePath);
                     results.push({
                         extension,
                         file: file.name,
                         success: true,
                         action: "moved",
-                        destination: destinationFilePath
+                        destination: destFilePath
                     });
-
                 } catch (error) {
-                    failed++;
-
                     results.push({
                         extension,
                         file: file.name,
@@ -465,24 +287,13 @@ ipcMain.handle("organize-files", async (event, payload) => {
             }
 
             if (matchingFiles.length === 0) {
-                results.push({
-                    extension,
-                    success: true,
-                    action: "none",
-                    message: "No files found."
-                });
+                results.push({ extension, success: true, action: "none", message: "No files found." });
             }
         }
 
-        return {
-            success: true,
-            results
-        };
+        return { success: true, results };
 
     } catch (error) {
-        return {
-            success: false,
-            error: error.message
-        };
+        return { success: false, error: error.message };
     }
 });
