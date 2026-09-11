@@ -626,23 +626,28 @@ function addLog(message, type = "info") {
 /*
 |--------------------------------------------------------------------------
 | Extension color class
+| Derived from the category already assigned in DEFAULT_RULES.
+| No need to maintain a separate extension list here.
 |--------------------------------------------------------------------------
 */
 
 function getExtClass(ext) {
-    const e        = ext.toLowerCase().replace(".", "");
-    const images   = ["png","jpg","jpeg","gif","bmp","webp","svg","ico","tiff","heic"];
-    const videos   = ["mp4","mkv","avi","mov","wmv","flv","webm","m4v"];
-    const audio    = ["mp3","wav","flac","aac","ogg","wma","m4a","opus"];
-    const docs     = ["pdf","doc","docx","xls","xlsx","ppt","pptx","txt","md","csv","rtf","odt"];
-    const code     = ["js","ts","py","java","cpp","c","cs","html","css","json","xml","php","rb","go","rs","sh","bat"];
-    const archives = ["zip","rar","7z","tar","gz","bz2","xz","iso"];
-    if (images.includes(e))   return "ext-image";
-    if (videos.includes(e))   return "ext-video";
-    if (audio.includes(e))    return "ext-audio";
-    if (docs.includes(e))     return "ext-doc";
-    if (code.includes(e))     return "ext-code";
-    if (archives.includes(e)) return "ext-archive";
+    const categoryColorMap = {
+        Images:    "ext-image",
+        Videos:    "ext-video",
+        Music:     "ext-audio",
+        Documents: "ext-doc",
+        Code:      "ext-code",
+        Archives:  "ext-archive",
+        Fonts:     "ext-other",
+        Unknown:   "ext-other"
+    };
+
+    const rule = rules[ext];
+    if (rule && categoryColorMap[rule.category]) {
+        return categoryColorMap[rule.category];
+    }
+
     return "ext-other";
 }
 
