@@ -112,6 +112,46 @@ ipcMain.handle("get-default-rules", () => {
 
 /*
 |--------------------------------------------------------------------------
+| User rules — persistent override layer
+|
+| Stored at: {userData}/user-rules.json
+| Shape: { ".pdf": { path: "C:\...\pdf", category: "Documents" }, ... }
+|
+| Only extensions the user has customised are stored here.
+| On load, these are merged over DEFAULT_RULES in the renderer.
+|--------------------------------------------------------------------------
+*/
+
+function getUserRulesPath() {
+    return path.join(app.getPath("userData"), "user-rules.json");
+}
+
+ipcMain.handle("load-user-rules", async () => {
+    try {
+        const data = await fs.readFile(getUserRulesPath(), "utf8");
+        return JSON.parse(data);
+    } catch {
+        // File doesn't exist yet — return empty object
+        return {};
+    }
+});
+
+ipcMain.handle("save-user-rules", async (event, userRules) => {
+    try {
+        await fs.writeFile(
+            getUserRulesPath(),
+            JSON.stringify(userRules, null, 2),
+            "utf8"
+        );
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | Scan folder
 |--------------------------------------------------------------------------
 */

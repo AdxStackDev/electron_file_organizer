@@ -80,8 +80,50 @@ const activityLog = document.getElementById("activityLog");
 
 let currentFiles      = [];
 let currentExtensions = [];
-let rules             = {};   // { ".jpg": { category, path } }
+let rules             = {};   // { ".jpg": { category, path } } — defaults merged with user overrides
 let categories        = {};   // { Images: { label, path }, ... }
+let userRules         = {};   // { ".pdf": { path, category } } — persisted overrides only
+
+
+/*
+|--------------------------------------------------------------------------
+| Debounce helper — prevents saving on every single keystroke
+|--------------------------------------------------------------------------
+*/
+
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Save a single user rule override
+| Merges into userRules, derives category from path, then persists.
+|--------------------------------------------------------------------------
+*/
+
+const persistUserRules = debounce(async () => {
+    await window.electronAPI.saveUserRules(userRules);
+}, 600);
+
+function saveUserRule(ext, destPath) {
+    if (!ext) return;
+
+    if (!destPath || destPath.trim() === "") {
+        // User cleared the path — store explicitly as empty so it overrides the default
+        userRules[ext] = { path: "", category: "Unknown" };
+    } else {
+        const category = getCategoryFromPath(destPath);
+        userRules[ext] = { path: destPath.trim(), category };
+    }
+
+    persistUserRules();
+}
 
 
 /*
@@ -96,10 +138,17 @@ async function initialize() {
 
     folderPathInput.value = defaultFolder;
 
-    [rules, categories] = await Promise.all([
+    [rules, categories, userRules] = await Promise.all([
         window.electronAPI.getDefaultRules(),
-        window.electronAPI.getCategories()
+        window.electronAPI.getCategories(),
+        window.electronAPI.loadUserRules()
     ]);
+
+    // Merge user overrides on top of defaults.
+    // src/data/extensions files are never modified — user rules layer on top.
+    for (const [ext, override] of Object.entries(userRules)) {
+        rules[ext] = { ...(rules[ext] ?? {}), ...override };
+    }
 }
 
 initialize();
@@ -258,17 +307,25 @@ function closeAllDropdowns() {
 document.addEventListener("click", closeAllDropdowns);
 
 
-function selectCategory(wrapper, trigger, panel, key, extension) {
+/*
+|--------------------------------------------------------------------------
+| Update category trigger visuals only (no input side-effects)
+| Used when the user types in the destination — we reflect the derived
+| category in the dropdown but leave the input value alone.
+|--------------------------------------------------------------------------
+*/
 
-    // Update trigger
+function updateCategoryTrigger(trigger, panel, key) {
+
     trigger.dataset.value = key;
-    trigger.className = `cat-trigger cat-${key}`;
-    trigger.dataset.extension = extension;
+    trigger.className     = `cat-trigger cat-${key}`;
+
     trigger.innerHTML = `<span class="cat-dot dot-${key}"></span>
         <span class="cat-label">${escapeHtml(categories[key]?.label ?? key)}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"/></svg>`;
-    // Re-attach toggle listener since innerHTML was replaced
+
+    // Re-attach toggle since innerHTML replaced it
     trigger.addEventListener("click", (e) => {
         e.stopPropagation();
         const isOpen = panel.classList.contains("open");
@@ -276,16 +333,31 @@ function selectCategory(wrapper, trigger, panel, key, extension) {
         if (!isOpen) openDropdown(trigger, panel);
     });
 
-    // Update active option
+    // Sync active state in panel options
     panel.querySelectorAll(".cat-option").forEach(opt => {
         opt.classList.toggle("active", opt.dataset.value === key);
     });
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Select category FROM dropdown click
+| Updates the trigger AND fills the destination input with the default path.
+| This is the only place that writes to the input value.
+|--------------------------------------------------------------------------
+*/
+
+function selectCategory(wrapper, trigger, panel, key, extension) {
+
+    updateCategoryTrigger(trigger, panel, key);
 
     closeAllDropdowns();
 
-    // Sync destination input in same row
+    // Fill destination input with category default path
     const row   = wrapper.closest("tr");
     const input = row?.querySelector(".destination-input");
+
     if (input) {
         const cat = categories[key];
         if (key === "Unknown") {
@@ -295,6 +367,8 @@ function selectCategory(wrapper, trigger, panel, key, extension) {
             input.value       = cat?.path ?? "";
             input.placeholder = "Destination path";
         }
+        // Trigger change event to save the rule
+        input.dispatchEvent(new Event("change"));
     }
 
     updateSummary();
@@ -403,8 +477,8 @@ function renderExtensions() {
 /*
 |--------------------------------------------------------------------------
 | React to destination input change
-| → if path no longer matches any category default → set dropdown to Unknown
-| → if path matches a category default → update dropdown to that category
+| → only update the category dropdown to reflect what was typed
+| → NEVER overwrite what the user typed — just update the label
 |--------------------------------------------------------------------------
 */
 
@@ -412,24 +486,38 @@ extensionTable.addEventListener("input", (e) => {
 
     if (!e.target.classList.contains("destination-input")) return;
 
-    const input  = e.target;
-    const row    = input.closest("tr");
+    const input   = e.target;
+    const row     = input.closest("tr");
     const trigger = row?.querySelector(".cat-trigger");
     const wrapper = row?.querySelector(".cat-wrapper");
 
     if (trigger && wrapper) {
         const derivedKey = getCategoryFromPath(input.value);
         const panel      = wrapper._panel;
+
         if (panel) {
-            selectCategory(wrapper, trigger, panel, derivedKey, trigger.dataset.extension);
-            // Restore the typed value since selectCategory overwrites it for non-Unknown
-            if (derivedKey === "Unknown") {
-                input.value = e.target.value;
-            }
+            // Only update dropdown visual — do NOT touch the input value
+            updateCategoryTrigger(trigger, panel, derivedKey);
         }
     }
 
     updateSummary();
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Save user rule when destination input loses focus (debounced persist)
+|--------------------------------------------------------------------------
+*/
+
+extensionTable.addEventListener("change", (e) => {
+    if (!e.target.classList.contains("destination-input")) return;
+    
+    const ext  = e.target.dataset.extension;
+    const path = e.target.value.trim();
+    
+    saveUserRule(ext, path);
 });
 
 
