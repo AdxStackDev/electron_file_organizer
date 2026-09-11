@@ -55,38 +55,27 @@ function switchToActivity() {
 |--------------------------------------------------------------------------
 */
 
-const folderPathInput =
-    document.getElementById("folderPath");
+const folderPathInput = document.getElementById("folderPath");
 
-const browseButton =
-    document.getElementById("browseButton");
+const browseButton = document.getElementById("browseButton");
 
-const scanButton =
-    document.getElementById("scanButton");
+const scanButton = document.getElementById("scanButton");
 
-const organizeButton =
-    document.getElementById("organizeButton");
+const organizeButton = document.getElementById("organizeButton");
 
-const resetButton =
-    document.getElementById("resetButton");
+const resetButton = document.getElementById("resetButton");
 
-const clearLogButton =
-    document.getElementById("clearLogButton");
+const clearLogButton = document.getElementById("clearLogButton");
 
-const extensionTable =
-    document.getElementById("extensionTable");
+const extensionTable = document.getElementById("extensionTable");
 
-const totalFiles =
-    document.getElementById("totalFiles");
+const totalFiles = document.getElementById("totalFiles");
 
-const totalExtensions =
-    document.getElementById("totalExtensions");
+const totalExtensions = document.getElementById("totalExtensions");
 
-const configuredExtensions =
-    document.getElementById("configuredExtensions");
+const configuredExtensions = document.getElementById("configuredExtensions");
 
-const activityLog =
-    document.getElementById("activityLog");
+const activityLog = document.getElementById("activityLog");
 
 
 let currentFiles      = [];
@@ -103,8 +92,7 @@ let categories        = {};   // { Images: { label, path }, ... }
 
 async function initialize() {
 
-    const defaultFolder =
-        await window.electronAPI.getDefaultFolder();
+    const defaultFolder = await window.electronAPI.getDefaultFolder();
 
     folderPathInput.value = defaultFolder;
 
@@ -125,8 +113,7 @@ initialize();
 
 browseButton.addEventListener("click", async () => {
 
-    const folder =
-        await window.electronAPI.selectFolder();
+    const folder =  await window.electronAPI.selectFolder();
 
     if (!folder) return;
 
@@ -164,8 +151,7 @@ scanButton.addEventListener("click", async () => {
 
     try {
 
-        const response =
-            await window.electronAPI.scanFolder(folderPath);
+        const response =  await window.electronAPI.scanFolder(folderPath);
 
         if (!response.success) {
             alert(response.error);
@@ -186,13 +172,10 @@ scanButton.addEventListener("click", async () => {
     } finally {
 
         scanButton.disabled    = false;
-        scanButton.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        scanButton.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            Scan Folder
-        `;
+            </svg>Scan Folder`;
     }
 });
 
@@ -215,13 +198,10 @@ function buildCategorySelect(activeKey, extension) {
     trigger.dataset.extension = extension;
     trigger.dataset.value = activeKey;
 
-    trigger.innerHTML = `
-        <span class="cat-dot dot-${activeKey}"></span>
+    trigger.innerHTML = `<span class="cat-dot dot-${activeKey}"></span>
         <span class="cat-label">${escapeHtml(categories[activeKey]?.label ?? activeKey)}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"/>
-        </svg>
-    `;
+            <polyline points="6 9 12 15 18 9"/></svg>`;
 
     const panel = document.createElement("div");
     panel.className = "cat-dropdown";
@@ -230,10 +210,7 @@ function buildCategorySelect(activeKey, extension) {
         const option = document.createElement("div");
         option.className = `cat-option cat-${key}${key === activeKey ? " active" : ""}`;
         option.dataset.value = key;
-        option.innerHTML = `
-            <span class="cat-dot dot-${key}"></span>
-            ${escapeHtml(cat.label)}
-        `;
+        option.innerHTML = `<span class="cat-dot dot-${key}"></span>${escapeHtml(cat.label)}`;
 
         option.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -287,13 +264,10 @@ function selectCategory(wrapper, trigger, panel, key, extension) {
     trigger.dataset.value = key;
     trigger.className = `cat-trigger cat-${key}`;
     trigger.dataset.extension = extension;
-    trigger.innerHTML = `
-        <span class="cat-dot dot-${key}"></span>
+    trigger.innerHTML = `<span class="cat-dot dot-${key}"></span>
         <span class="cat-label">${escapeHtml(categories[key]?.label ?? key)}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"/>
-        </svg>
-    `;
+            <polyline points="6 9 12 15 18 9"/></svg>`;
     // Re-attach toggle listener since innerHTML was replaced
     trigger.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -365,8 +339,7 @@ function renderExtensions() {
 
     if (currentExtensions.length === 0) {
 
-        extensionTable.innerHTML = `
-            <tr class="empty-row">
+        extensionTable.innerHTML = `<tr class="empty-row">
                 <td colspan="4">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -375,8 +348,7 @@ function renderExtensions() {
                     </svg>
                     <br>No files found.
                 </td>
-            </tr>
-        `;
+            </tr>`;
 
         updateSummary();
         organizeButton.disabled = true;
@@ -394,8 +366,7 @@ function renderExtensions() {
 
         const row = document.createElement("tr");
 
-        row.innerHTML = `
-            <td>
+        row.innerHTML = `<td>
                 <span class="extension ${getExtClass(extension)}">
                     ${escapeHtml(extension)}
                 </span>
@@ -415,8 +386,7 @@ function renderExtensions() {
                     value="${escapeAttribute(defaultDestPath)}"
                     placeholder="${defaultCatKey === 'Unknown' ? 'Enter path or leave blank to skip' : 'Destination path'}"
                 >
-            </td>
-        `;
+            </td>`;
 
         // Inject custom dropdown into the category cell
         const catCell = row.querySelector(".category-cell");
@@ -521,17 +491,13 @@ organizeButton.addEventListener("click", async () => {
     if (!confirmed) return;
 
     organizeButton.disabled  = true;
-    organizeButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    organizeButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-        Organizing...
-    `;
+        </svg>Organizing...`;
 
     try {
 
-        const response =
-            await window.electronAPI.organizeFiles({
+        const response = await window.electronAPI.organizeFiles({
                 folderPath,
                 extensions: extensionRules
             });
@@ -567,8 +533,7 @@ organizeButton.addEventListener("click", async () => {
         switchToActivity();
 
         // Re-scan
-        const scanResponse =
-            await window.electronAPI.scanFolder(folderPath);
+        const scanResponse = await window.electronAPI.scanFolder(folderPath);
 
         if (scanResponse.success) {
             currentFiles      = scanResponse.files;
@@ -586,9 +551,7 @@ organizeButton.addEventListener("click", async () => {
         organizeButton.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            Organize Files
-        `;
+            </svg> Organize Files`;
     }
 });
 
@@ -623,8 +586,7 @@ clearLogButton.addEventListener("click", () => {
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             <br>No activity yet.
-        </div>
-    `;
+        </div>`;
 });
 
 
@@ -663,11 +625,9 @@ function clearScanResults() {
     currentFiles      = [];
     currentExtensions = [];
 
-    extensionTable.innerHTML = `
-        <tr class="empty-row">
+    extensionTable.innerHTML = `<tr class="empty-row">
             <td colspan="4">Scan a folder to see files.</td>
-        </tr>
-    `;
+        </tr>`;
 
     updateSummary();
     organizeButton.disabled = true;
@@ -695,11 +655,9 @@ function addLog(message, type = "info") {
     const isFinished = message.toLowerCase().startsWith("finished");
     const logType   = type !== "info" ? type : isFailed ? "error" : isFinished ? "success" : "info";
 
-    entry.innerHTML = `
-        <div class="log-icon ${logType}">${icons[logType]}</div>
+    entry.innerHTML = `<div class="log-icon ${logType}">${icons[logType]}</div>
         <div class="log-text">${escapeHtml(message)}</div>
-        <div class="log-time">${now}</div>
-    `;
+        <div class="log-time">${now}</div>`;
 
     activityLog.prepend(entry);
 }
