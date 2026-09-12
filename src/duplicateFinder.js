@@ -177,6 +177,7 @@ class DuplicateFinder {
 
     /**
      * Find duplicates by file hash (accurate method)
+     * Optimized: First groups by size, then only hashes files with size duplicates
      */
     async findDuplicatesByHash(folderPath, onProgress = null) {
         this.reset();
@@ -185,15 +186,53 @@ class DuplicateFinder {
             const files = await this.getAllFiles(folderPath);
             if (this.isCancelled) return { duplicates: [], method: "hash", cancelled: true };
 
-            const hashMap = {};
+            // Phase 1: Group files by size (fast pre-filter)
+            const sizeMap = {};
             this.progress.total = files.length;
 
-            // console.log(`[DuplicateFinder] Starting hash scan on ${files.length} files`);
+            // console.log(`[DuplicateFinder] Phase 1: Grouping ${files.length} files by size`);
 
             for (let i = 0; i < files.length; i++) {
                 if (this.isCancelled) return { duplicates: [], method: "hash", cancelled: true };
 
                 const file = files[i];
+                const size = await this.getFileSize(file);
+
+                // Skip files that failed stat or are 0 bytes
+                if (size === null || size === 0) {
+                    this.progress.current = i + 1;
+                    if (onProgress) onProgress({ ...this.progress });
+                    continue;
+                }
+
+                if (!sizeMap[size]) {
+                    sizeMap[size] = [];
+                }
+
+                sizeMap[size].push(file);
+
+                this.progress.current = i + 1;
+                if (onProgress) onProgress({ ...this.progress });
+            }
+
+            // Phase 2: Only hash files that have size duplicates
+            const filesToHash = [];
+            for (const [size, fileList] of Object.entries(sizeMap)) {
+                if (fileList.length > 1) {
+                    filesToHash.push(...fileList);
+                }
+            }
+
+            // console.log(`[DuplicateFinder] Phase 2: Hashing ${filesToHash.length} files (skipped ${files.length - filesToHash.length} unique-sized files)`);
+
+            const hashMap = {};
+            this.progress.total = files.length; // Keep total as original file count
+            this.progress.current = files.length - filesToHash.length; // Account for skipped files
+
+            for (let i = 0; i < filesToHash.length; i++) {
+                if (this.isCancelled) return { duplicates: [], method: "hash", cancelled: true };
+
+                const file = filesToHash[i];
                 const hash = await this.calculateFileHash(file);
 
                 // Log hash result for debugging
@@ -202,7 +241,7 @@ class DuplicateFinder {
                 // Skip files that failed to hash — never group nulls together
                 if (hash === null) {
                     // console.warn(`[DuplicateFinder] Skipping file with null hash: ${file}`);
-                    this.progress.current = i + 1;
+                    this.progress.current++;
                     if (onProgress) onProgress({ ...this.progress });
                     continue;
                 }
@@ -213,7 +252,7 @@ class DuplicateFinder {
 
                 hashMap[hash].push(file);
 
-                this.progress.current = i + 1;
+                this.progress.current++;
                 if (onProgress) onProgress({ ...this.progress });
             }
 
