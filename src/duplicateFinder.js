@@ -102,15 +102,26 @@ class DuplicateFinder {
     }
 
     /**
-     * Calculate SHA256 hash of a file
+     * Calculate SHA256 hash of a file using streams (memory efficient, reliable)
      */
-    async calculateFileHash(filePath) {
-        try {
-            const fileStream = await fs.readFile(filePath);
-            return crypto.createHash("sha256").update(fileStream).digest("hex");
-        } catch (error) {
-            return null;
-        }
+    calculateFileHash(filePath) {
+        return new Promise((resolve) => {
+            try {
+                const fsSync = require("fs");
+                const hash = crypto.createHash("sha256");
+                const stream = fsSync.createReadStream(filePath);
+
+                stream.on("data", (chunk) => hash.update(chunk));
+                stream.on("end", () => resolve(hash.digest("hex")));
+                stream.on("error", (err) => {
+                    console.error(`Hash error for ${filePath}:`, err.message);
+                    resolve(null);
+                });
+            } catch (error) {
+                console.error(`Hash setup error for ${filePath}:`, error.message);
+                resolve(null);
+            }
+        });
     }
 
     /**
@@ -132,7 +143,12 @@ class DuplicateFinder {
                 const file = files[i];
                 const size = await this.getFileSize(file);
 
-                if (size === null) continue;
+                // Skip files that failed stat or are 0 bytes
+                if (size === null || size === 0) {
+                    this.progress.current = i + 1;
+                    if (onProgress) onProgress({ ...this.progress });
+                    continue;
+                }
 
                 if (!sizeMap[size]) {
                     sizeMap[size] = [];
@@ -172,13 +188,24 @@ class DuplicateFinder {
             const hashMap = {};
             this.progress.total = files.length;
 
+            // console.log(`[DuplicateFinder] Starting hash scan on ${files.length} files`);
+
             for (let i = 0; i < files.length; i++) {
                 if (this.isCancelled) return { duplicates: [], method: "hash", cancelled: true };
 
                 const file = files[i];
                 const hash = await this.calculateFileHash(file);
 
-                if (hash === null) continue;
+                // Log hash result for debugging
+                // console.log(`[DuplicateFinder] File: ${path.basename(file)}, Hash: ${hash ? hash.substring(0, 16) + '...' : 'NULL'}`);
+
+                // Skip files that failed to hash — never group nulls together
+                if (hash === null) {
+                    // console.warn(`[DuplicateFinder] Skipping file with null hash: ${file}`);
+                    this.progress.current = i + 1;
+                    if (onProgress) onProgress({ ...this.progress });
+                    continue;
+                }
 
                 if (!hashMap[hash]) {
                     hashMap[hash] = [];
@@ -190,6 +217,14 @@ class DuplicateFinder {
                 if (onProgress) onProgress({ ...this.progress });
             }
 
+            // Log hash groups
+            // console.log(`[DuplicateFinder] Total unique hashes: ${Object.keys(hashMap).length}`);
+            Object.entries(hashMap).forEach(([hash, fileList]) => {
+                if (fileList.length > 1) {
+                    // console.log(`[DuplicateFinder] Hash ${hash.substring(0, 16)}... has ${fileList.length} files:`, fileList.map(f => path.basename(f)));
+                }
+            });
+
             // Filter only groups with more than 1 file
             const duplicates = Object.values(hashMap)
                 .filter(group => group.length > 1)
@@ -199,8 +234,11 @@ class DuplicateFinder {
                     files: group.sort()
                 }));
 
+            // console.log(`[DuplicateFinder] Found ${duplicates.length} duplicate groups`);
+
             return { duplicates, method: "hash", cancelled: false };
         } catch (error) {
+            // console.error(`[DuplicateFinder] Hash scan error:`, error);
             throw new Error(`Hash-based duplicate scan failed: ${error.message}`);
         }
     }
