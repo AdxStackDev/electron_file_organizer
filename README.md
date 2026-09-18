@@ -1,6 +1,6 @@
 # ADX File Organizer
 
-A modern, fast Electron desktop app for organizing files by extension. Scan folders, set organization rules with categories, and batch-move files to the right destinations — all with a sleek dark UI and persistent settings.
+A modern, desktop app for organizing files by extension. Scan folders, set organization rules with categories, and batch-move files to the right destinations — all with a sleek dark UI and persistent settings.
 
 ## Screenshots
 
