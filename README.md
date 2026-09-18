@@ -6,8 +6,6 @@ A modern, desktop app for organizing files by extension. Scan folders, set organ
 
 ![Dashboard](snaps/snap1.png)
 
-![File Organization Rules](snaps/snap2.png)
-
 ![Activity Log](snaps/snap3.png)
 
 ## Features
