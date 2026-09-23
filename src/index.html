@@ -150,6 +150,14 @@
                                 Scan Folder
                             </button>
                         </div>
+
+                        <div class="scan-options-row" style="margin-top: 14px; display: flex; align-items: center; gap: 10px;">
+                            <label class="checkbox-label" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #cbd5e1; cursor: pointer;">
+                                <input type="checkbox" id="recursiveScanCheckbox" style="accent-color: var(--purple); width: 16px; height: 16px; cursor: pointer;">
+                                <span>Include subfolders (Recursive)</span>
+                            </label>
+                            <span style="font-size: 11px; color: var(--muted);">(Organize files located in nested folders)</span>
+                        </div>
                     </section>
 
 
@@ -538,32 +546,159 @@
             </div><!-- /view-duplicates -->
 
 
-            <!-- VIEW: Settings (placeholder) -->
+            <!-- VIEW: Settings -->
             <div class="view" id="view-settings">
                 <div class="content">
 
+                    <!-- Organizer Settings -->
                     <section class="card">
                         <div class="section-header">
                             <div class="section-title">
                                 <span class="section-icon icon-purple">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="3"/>
-                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                                     </svg>
                                 </span>
                                 <div>
-                                    <h2>Settings</h2>
-                                    <p>App configuration coming soon.</p>
+                                    <h2>File Organizer Settings</h2>
+                                    <p>Configure default behaviors for the organizer.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="placeholder-view">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                            </svg>
-                            <p>Settings page is coming soon.</p>
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Default Recursive Scan</strong>
+                                    <p>Enable subfolder scanning by default when opening the organizer.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="settingDefaultRecursive">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Auto-switch to Activity</strong>
+                                    <p>Automatically open the Activity tab after organizing completes.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="settingAutoSwitchActivity" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Duplicate Finder Settings -->
+                    <section class="card">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <span class="section-icon icon-pink">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <h2>Duplicate Finder Settings</h2>
+                                    <p>Set default duplicate detection preferences.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Default Detection Method</strong>
+                                    <p>Pre-select Fast (Size) or Accurate (Hash) for new duplicate scans.</p>
+                                </div>
+                                <select id="settingDuplicateMethod" class="setting-select">
+                                    <option value="size">Fast (Size-based)</option>
+                                    <option value="hash">Accurate (Hash-based)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Safety & Confirmations -->
+                    <section class="card">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <span class="section-icon icon-cyan">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <h2>Safety & Confirmations</h2>
+                                    <p>Control confirmation popups for destructive or batch actions.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Confirm Before Organizing</strong>
+                                    <p>Show confirmation dialog before moving files to their destination.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="settingConfirmOrganize" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Confirm Before Deleting Duplicates</strong>
+                                    <p>Show warning confirmation before permanently deleting duplicate files.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="settingConfirmDelete" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Data & Reset Management -->
+                    <section class="card">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <span class="section-icon icon-orange">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="1 4 1 10 7 10"/>
+                                        <path d="M3.51 15a9 9 0 1 0 .49-4.49"/>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <h2>Data & Reset</h2>
+                                    <p>Manage application data and custom saved rules.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Clear All Custom Rules</strong>
+                                    <p>Delete user-rules.json to restore default folder mappings for all extensions.</p>
+                                </div>
+                                <button id="btnClearCustomRules" class="secondary-button" style="border-color: #ef4444; color: #fca5a5;">
+                                    Clear Rules
+                                </button>
+                            </div>
+
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <strong>Restore Default Settings</strong>
+                                    <p>Reset all configuration options above back to factory defaults.</p>
+                                </div>
+                                <button id="btnResetSettings" class="secondary-button">
+                                    Reset Settings
+                                </button>
+                            </div>
                         </div>
                     </section>
 
@@ -579,6 +714,7 @@
 
 <script src="renderer.js"></script>
 <script src="duplicates.js"></script>
+<script src="settings.js"></script>
 
 </body>
 </html>

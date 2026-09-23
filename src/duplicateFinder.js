@@ -1,4 +1,5 @@
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
@@ -107,7 +108,6 @@ class DuplicateFinder {
     calculateFileHash(filePath) {
         return new Promise((resolve) => {
             try {
-                const fsSync = require("fs");
                 const hash = crypto.createHash("sha256");
                 const stream = fsSync.createReadStream(filePath);
 

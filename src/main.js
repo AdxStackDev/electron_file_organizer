@@ -159,35 +159,48 @@ ipcMain.handle("save-user-rules", async (event, userRules) => {
 |--------------------------------------------------------------------------
 */
 
-ipcMain.handle("scan-folder", async (event, folderPath) => {
+async function scanDirectoryFiles(dir, recursive = false, rootDir = dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    let files = [];
+
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase();
+            files.push({
+                name:         entry.name,
+                path:         fullPath,
+                relativePath: path.relative(rootDir, fullPath),
+                extension:    ext || "[no extension]"
+            });
+        } else if (recursive && entry.isDirectory()) {
+            try {
+                const subFiles = await scanDirectoryFiles(fullPath, true, rootDir);
+                files = files.concat(subFiles);
+            } catch (err) {
+                // Ignore directories that cannot be read (e.g. permissions)
+                console.warn(`Skipping unreadable directory ${fullPath}:`, err.message);
+            }
+        }
+    }
+
+    return files;
+}
+
+ipcMain.handle("scan-folder", async (event, folderPath, options = {}) => {
     try {
         if (!folderPath) {
             throw new Error("Folder path is required.");
         }
 
+        const isRecursive = Boolean(options && options.recursive);
         const stats = await fs.stat(folderPath);
 
         if (!stats.isDirectory()) {
             throw new Error("Selected path is not a directory.");
         }
 
-        const entries = await fs.readdir(folderPath, {
-            withFileTypes: true
-        });
-
-        const files = [];
-
-        for (const entry of entries) {
-            if (!entry.isFile()) continue;
-
-            const ext = path.extname(entry.name).toLowerCase();
-
-            files.push({
-                name:      entry.name,
-                path:      path.join(folderPath, entry.name),
-                extension: ext || "[no extension]"
-            });
-        }
+        const files = await scanDirectoryFiles(folderPath, isRecursive, folderPath);
 
         // Count per extension
         const extensionMap = {};
@@ -209,6 +222,7 @@ ipcMain.handle("scan-folder", async (event, folderPath) => {
         return {
             success: true,
             folder: folderPath,
+            recursive: isRecursive,
             totalFiles: files.length,
             extensions,
             files
@@ -257,9 +271,40 @@ async function getUniqueFilePath(destPath) {
 |--------------------------------------------------------------------------
 */
 
+async function collectFilesForOrganize(dir, extension, recursive, destinationPath) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    let matching = [];
+
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isFile()) {
+            if (path.extname(entry.name).toLowerCase() === extension) {
+                // If destinationPath is inside dir or elsewhere, don't move files already in destinationPath
+                const rel = path.relative(destinationPath, fullPath);
+                const isAlreadyInDest = !rel.startsWith("..") && !path.isAbsolute(rel);
+                if (!isAlreadyInDest) {
+                    matching.push({ name: entry.name, path: fullPath });
+                }
+            }
+        } else if (recursive && entry.isDirectory()) {
+            // Avoid recursing into destination folder if it is located inside the source folder
+            if (path.resolve(fullPath) === path.resolve(destinationPath)) {
+                continue;
+            }
+            try {
+                const sub = await collectFilesForOrganize(fullPath, extension, true, destinationPath);
+                matching = matching.concat(sub);
+            } catch (err) {
+                console.warn(`Skipping unreadable directory during organize: ${fullPath}`, err.message);
+            }
+        }
+    }
+    return matching;
+}
+
 ipcMain.handle("organize-files", async (event, payload) => {
     try {
-        const { folderPath, extensions } = payload;
+        const { folderPath, extensions, recursive = false } = payload;
 
         if (!folderPath) {
             throw new Error("Folder path is required.");
@@ -296,15 +341,15 @@ ipcMain.handle("organize-files", async (event, payload) => {
 
             await fs.mkdir(destinationPath, { recursive: true });
 
-            const entries = await fs.readdir(folderPath, { withFileTypes: true });
-
-            const matchingFiles = entries.filter(entry =>
-                entry.isFile() &&
-                path.extname(entry.name).toLowerCase() === extension
+            const matchingFiles = await collectFilesForOrganize(
+                folderPath,
+                extension,
+                Boolean(recursive),
+                destinationPath
             );
 
             for (const file of matchingFiles) {
-                const sourcePath = path.join(folderPath, file.name);
+                const sourcePath = file.path;
                 let destFilePath = path.join(destinationPath, file.name);
                 destFilePath     = await getUniqueFilePath(destFilePath);
 
@@ -313,6 +358,7 @@ ipcMain.handle("organize-files", async (event, payload) => {
                     results.push({
                         extension,
                         file: file.name,
+                        source: sourcePath,
                         success: true,
                         action: "moved",
                         destination: destFilePath
@@ -321,6 +367,7 @@ ipcMain.handle("organize-files", async (event, payload) => {
                     results.push({
                         extension,
                         file: file.name,
+                        source: sourcePath,
                         success: false,
                         action: "failed",
                         message: error.message
@@ -541,3 +588,68 @@ ipcMain.handle("keep-only-best", async (event, payload) => {
         return { success: false, error: error.message };
     }
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| Application Settings IPC Handlers
+|--------------------------------------------------------------------------
+*/
+
+const DEFAULT_SETTINGS = {
+    defaultRecursive: false,
+    defaultDuplicateMethod: "size",
+    confirmBeforeOrganize: true,
+    confirmBeforeDelete: true,
+    autoSwitchToActivity: true
+};
+
+function getSettingsPath() {
+    return path.join(app.getPath("userData"), "settings.json");
+}
+
+ipcMain.handle("load-settings", async () => {
+    try {
+        const data = await fs.readFile(getSettingsPath(), "utf8");
+        return { success: true, settings: { ...DEFAULT_SETTINGS, ...JSON.parse(data) } };
+    } catch {
+        return { success: true, settings: { ...DEFAULT_SETTINGS } };
+    }
+});
+
+ipcMain.handle("save-settings", async (event, newSettings) => {
+    try {
+        const merged = { ...DEFAULT_SETTINGS, ...newSettings };
+        await fs.writeFile(
+            getSettingsPath(),
+            JSON.stringify(merged, null, 2),
+            "utf8"
+        );
+        return { success: true, settings: merged };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle("reset-all-rules", async () => {
+    try {
+        await fs.unlink(getUserRulesPath());
+    } catch {
+        // file may not exist, ignore
+    }
+    return { success: true };
+});
+
+ipcMain.handle("reset-settings", async () => {
+    try {
+        await fs.writeFile(
+            getSettingsPath(),
+            JSON.stringify(DEFAULT_SETTINGS, null, 2),
+            "utf8"
+        );
+        return { success: true, settings: DEFAULT_SETTINGS };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+

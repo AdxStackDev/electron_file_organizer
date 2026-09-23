@@ -15,23 +15,38 @@ A modern, fast Electron desktop app for organizing files by extension. Scan fold
 **Core Organizer**
 - Browse and scan any folder on your system
 - Auto-detects all file extensions present
+- **Recursive Mode toggle** — optionally scan and organize nested subfolders with loop-prevention safeguards
 - Color-coded extension badges by file type
 - **Category system** — each extension maps to a category with a default destination path
 - **Custom category dropdown** per row — choose from Images, Videos, Music, Documents, Archives, Code, Fonts, or Unknown
 - Supports both absolute paths (`C:\Users\you\Pictures`) and relative paths (`Images` → created inside source folder)
 - Skips extensions with no destination configured (with confirmation prompt)
 
+**Duplicate Finder**
+- **Dual Detection Methods**:
+  - **Fast (Size-based)**: Rapid scan grouping files by identical file size
+  - **Accurate (Hash-based)**: Two-phase optimization (pre-filters by size, then streams SHA-256 hashes only on potential collisions)
+- **Deep Recursive Traversal**: Searches subdirectories across the target folder
+- **Real-Time Progress & Cancel**: Live file counter, progress bar, and instant scan abort
+- **Resolution Actions**:
+  - **Delete Selected**: Remove redundant copies with confirmation
+  - **Move to Duplicates Folder**: Safely quarantine duplicate copies into a `./Duplicates` folder
+  - **Keep Best**: Automatically retain the newest or largest file and purge duplicates
+- Group-level statistics: total size and wasted storage metrics
+
 **Persistent Customization**
 - **User rules persistence** — custom paths you set are saved to `user-rules.json` in the app data folder
+- **Settings persistence** — user preferences (scan method, recursive defaults, confirmations) saved to `settings.json`
 - Default extension rules from `src/data/extensions/` are never modified
-- Custom paths are remembered across app restarts
+- Custom paths and preferences are remembered across app restarts
 - Edit any path freely — category auto-updates when you change it, or falls back to "Unknown"
 
-**Dashboard & Sidebar**
+**Dashboard, Settings & Sidebar**
 - **Collapsible sidebar** — toggle icon-only mode for more space
-- **Multi-view navigation** — Organize, Activity, and Settings views
-- **Live summary** — total files, extensions found, rules configured
-- **Activity log** with color-coded success / error / info entries
+- **Multi-view navigation** — Organize, Duplicates, Activity, and Settings views
+- **Preferences & Settings** — manage default scan depth, default duplicate method, confirmation dialogues, and factory resets
+- **Live summary** — total files, extensions found, rules configured, duplicate groups, and wasted space
+- **Unified Activity log** with color-coded success / error / info entries across all operations
 - **Reset rules** button to restore defaults anytime
 
 ## Architecture
@@ -133,11 +148,14 @@ Output goes to `dist/`. Change `"target"` to `"portable"` for a single standalon
 
 ```
 src/
-  main.js              ← Electron main process, IPC handlers
-  preload.js           ← Context bridge to expose APIs
-  renderer.js          ← UI logic, sidebar, view switching
-  index.html           ← HTML structure with sidebar + views
-  styles.css           ← Dark theme, sidebar animations, responsive
+  main.js              ← Electron main process, window lifecycle, IPC handlers
+  preload.js           ← Context bridge exposing secure API subset
+  renderer.js          ← UI logic for File Organizer view, table rendering
+  duplicateFinder.js   ← Backend module for size & hash duplicate detection
+  duplicates.js        ← UI logic and actions for Duplicates view
+  settings.js          ← UI logic and persistence for Settings view
+  index.html           ← Main application shell with tabbed views & sidebar
+  styles.css           ← Dark theme, component styles, animations, responsive
   data/
     categories.js      ← Assembles all extensions + categories
     extensions/
@@ -152,28 +170,29 @@ src/
 
 ## Persistence
 
-User customizations are stored at:
-- **Windows**: `%APPDATA%\ADX-File-Organizer\user-rules.json`
-- **macOS**: `~/Library/Application Support/ADX-File-Organizer/user-rules.json`
-- **Linux**: `~/.config/ADX-File-Organizer/user-rules.json`
+User customizations and application preferences are stored in the user data directory:
+- **Windows**: `%APPDATA%\ADX-File-Organizer\`
+- **macOS**: `~/Library/Application Support/ADX-File-Organizer/`
+- **Linux**: `~/.config/ADX-File-Organizer/`
 
-Format:
-```json
-{
-  ".pdf": { "path": "C:\\Users\\You\\Documents\\PDFs", "category": "Documents" },
-  ".jpg": { "path": "E:\\Media\\Pictures", "category": "Images" }
-}
-```
+Files stored:
+- `user-rules.json` — Custom destination rules for extensions:
+  ```json
+  {
+    ".pdf": { "path": "C:\\Users\\You\\Documents\\PDFs", "category": "Documents" },
+    ".jpg": { "path": "E:\\Media\\Pictures", "category": "Images" }
+  }
+  ```
+- `settings.json` — General application preferences (default duplicate method, recursive scanning toggle, confirmation dialogues).
 
 ## Future Features
 
-- Undo last organize
-- Dry-run mode (preview without moving)
-- Duplicate detection
-- Watch mode (auto-organize new files)
-- Scheduled runs
-- System tray mode
-- Statistics dashboard
+- Undo last organize action
+- Dry-run mode (preview file moves without modifying files)
+- Watch mode (auto-organize newly downloaded or added files)
+- Scheduled automated runs
+- System tray background mode
+- Storage analytics and file distribution dashboard
 
 ## Tech Stack
 

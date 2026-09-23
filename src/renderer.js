@@ -61,6 +61,8 @@ const browseButton = document.getElementById("browseButton");
 
 const scanButton = document.getElementById("scanButton");
 
+const recursiveScanCheckbox = document.getElementById("recursiveScanCheckbox");
+
 const organizeButton = document.getElementById("organizeButton");
 
 const resetButton = document.getElementById("resetButton");
@@ -199,8 +201,8 @@ scanButton.addEventListener("click", async () => {
     `;
 
     try {
-
-        const response =  await window.electronAPI.scanFolder(folderPath);
+        const isRecursive = recursiveScanCheckbox ? recursiveScanCheckbox.checked : false;
+        const response =  await window.electronAPI.scanFolder(folderPath, { recursive: isRecursive });
 
         if (!response.success) {
             alert(response.error);
@@ -212,7 +214,7 @@ scanButton.addEventListener("click", async () => {
 
         renderExtensions();
 
-        addLog(`Scanned ${response.totalFiles} files.`);
+        addLog(`Scanned ${response.totalFiles} files${isRecursive ? " (recursive)" : ""}.`);
 
     } catch (error) {
 
@@ -575,8 +577,11 @@ organizeButton.addEventListener("click", async () => {
         if (!confirmed) return;
     }
 
-    const confirmed = confirm("Are you sure you want to organize these files?");
-    if (!confirmed) return;
+    const shouldConfirm = !window.appSettings || window.appSettings.confirmBeforeOrganize !== false;
+    if (shouldConfirm) {
+        const confirmed = confirm("Are you sure you want to organize these files?");
+        if (!confirmed) return;
+    }
 
     organizeButton.disabled  = true;
     organizeButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -584,10 +589,12 @@ organizeButton.addEventListener("click", async () => {
         </svg>Organizing...`;
 
     try {
+        const isRecursive = recursiveScanCheckbox ? recursiveScanCheckbox.checked : false;
 
         const response = await window.electronAPI.organizeFiles({
                 folderPath,
-                extensions: extensionRules
+                extensions: extensionRules,
+                recursive: isRecursive
             });
 
         if (!response.success) {
@@ -611,17 +618,20 @@ organizeButton.addEventListener("click", async () => {
             }
         });
 
-        addLog(`Finished. ${movedCount} files moved, ${failedCount} failed.`, "success");
+        addLog(`Finished. ${movedCount} files moved, ${failedCount} failed.${isRecursive ? " (recursive)" : ""}`, "success");
 
         alert(
             `Organization completed.\n\nMoved: ${movedCount}\nFailed: ${failedCount}`
         );
 
-        // Switch to Activity view so user sees results
-        switchToActivity();
+        // Switch to Activity view if enabled in settings
+        const shouldSwitch = !window.appSettings || window.appSettings.autoSwitchToActivity !== false;
+        if (shouldSwitch) {
+            switchToActivity();
+        }
 
         // Re-scan
-        const scanResponse = await window.electronAPI.scanFolder(folderPath);
+        const scanResponse = await window.electronAPI.scanFolder(folderPath, { recursive: isRecursive });
 
         if (scanResponse.success) {
             currentFiles      = scanResponse.files;

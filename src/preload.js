@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
     saveUserRules: (userRules) => ipcRenderer.invoke("save-user-rules", userRules),
 
-    scanFolder: (folderPath) => ipcRenderer.invoke("scan-folder", folderPath),
+    scanFolder: (folderPath, options) => ipcRenderer.invoke("scan-folder", folderPath, options),
 
     organizeFiles: (payload) => ipcRenderer.invoke("organize-files", payload),
 
@@ -35,5 +35,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     keepOnlyBest: (payload) => ipcRenderer.invoke("keep-only-best", payload),
 
     // Progress listener
-    onDuplicateScanProgress: (callback) => ipcRenderer.on("duplicate-scan-progress", (event, progress) => callback(progress))
+    onDuplicateScanProgress: (callback) => ipcRenderer.on("duplicate-scan-progress", (event, progress) => callback(progress)),
+
+    // Settings IPC
+    loadSettings: () => ipcRenderer.invoke("load-settings"),
+    saveSettings: (settings) => ipcRenderer.invoke("save-settings", settings),
+    resetAllRules: () => ipcRenderer.invoke("reset-all-rules"),
+    resetSettings: () => ipcRenderer.invoke("reset-settings")
 });

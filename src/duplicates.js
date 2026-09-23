@@ -405,11 +405,13 @@ async function handleDelete() {
         return;
     }
 
-    const confirmed = confirm(
-        `Are you sure you want to delete ${selectedFiles.size} file(s)?\n\nThis action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+    const shouldConfirm = !window.appSettings || window.appSettings.confirmBeforeDelete !== false;
+    if (shouldConfirm) {
+        const confirmed = confirm(
+            `Are you sure you want to delete ${selectedFiles.size} file(s)?\n\nThis action cannot be undone.`
+        );
+        if (!confirmed) return;
+    }
 
     deleteSelectedButton.disabled = true;
     addDuplicateLog(`Deleting ${selectedFiles.size} file(s)...`, "info");
