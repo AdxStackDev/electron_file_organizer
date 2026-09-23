@@ -189,7 +189,7 @@ async function handleScan() {
         }
 
         renderDuplicates();
-        updateSummary();
+        updateDuplicatesSummary();
 
         addDuplicateLog(
             `Found ${response.totalGroups} duplicate groups with ${response.totalDuplicateFiles} total files`,
@@ -444,7 +444,7 @@ async function handleDelete() {
         });
 
         selectedFiles.clear();
-        updateSummary();
+        updateDuplicatesSummary();
         updateActionButtonStates();
 
     } catch (error) {
@@ -510,7 +510,7 @@ async function handleMoveToFolder() {
         });
 
         selectedFiles.clear();
-        updateSummary();
+        updateDuplicatesSummary();
         updateActionButtonStates();
 
     } catch (error) {
@@ -580,7 +580,7 @@ async function handleKeepOnly(keepBy) {
         });
 
         selectedFiles.clear();
-        updateSummary();
+        updateDuplicatesSummary();
         updateActionButtonStates();
 
     } catch (error) {
@@ -598,7 +598,7 @@ async function handleKeepOnly(keepBy) {
 |--------------------------------------------------------------------------
 */
 
-function updateSummary() {
+function updateDuplicatesSummary() {
     if (currentDuplicates.length === 0) {
         summaryStats.style.display = "none";
         return;
